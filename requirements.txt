@@ -1,0 +1,7 @@
+apprise
+chardet
+lxml
+py7zr
+pynzbget
+rarfile
+six

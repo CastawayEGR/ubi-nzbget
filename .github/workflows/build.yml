@@ -1,0 +1,33 @@
+name: NZBGet CI/CD
+on: [workflow_dispatch]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    environment: deploy
+    steps:
+      - name: Checkout repo
+        id: checkout-repo
+        uses: actions/checkout@v2
+
+      - name: Set nzbget environment variable
+        run: echo "LATEST_NZBGET_VERSION=$(curl -s https://api.github.com/repos/nzbget/nzbget/releases/latest | jq -r .name)" >> "$GITHUB_ENV"  
+       
+      - name: Build Image
+        id: build-image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: nzbget
+          tags: latest ${{ env.LATEST_NZBGET_VERSION }} ${{ github.sha }}
+          containerfiles: |
+            ./Dockerfile
+
+      - name: Push to quay.io
+        id: push-to-quay
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: nzbget
+          tags: latest ${{ env.LATEST_NZBGET_VERSION }} ${{ github.sha }}
+          registry: quay.io/castawayegr
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
